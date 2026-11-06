@@ -111,7 +111,7 @@ const refresh=useCallback(async (withAdmin:boolean)=>{
   d.categories=(cats.data||[]) as Category[]
   d.store_settings=(sets.data?.length?sets.data:[defaults]) as Settings[]
   if(withAdmin){const tables=['products','customers','sales','sale_items','receivables','cash_entries','stock_movements','online_orders'] as const
-   const results=await Promise.all(tables.map(t=>supabase.from(t).select('*').limit(5000)))
+   const results=await Promise.all(tables.map(t=>supabase!.from(t).select('*').limit(5000)))
    results.forEach((r,i)=>{if(r.error)throw r.error;(d as unknown as Record<string,unknown>)[tables[i]]=r.data||[]})
   }
   setDb(d)
