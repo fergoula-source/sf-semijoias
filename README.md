@@ -2,6 +2,8 @@
 
 Site de vendas e sistema administrativo da SF Semijoias, pensado para funcionar no **celular e no computador**. Identidade visual inspirada na marca original (turquesa, branco e detalhes dourados). Fotos fornecidas pela própria família.
 
+**ATENÇÃO (novembro/2026):** a publicação pública sem Supabase é somente uma vitrine de preparação, **sem painel de demonstração e sem cadastros reais**. O modo de teste com dados locais ficou restrito a `npm run dev` em `localhost`, e o login administrativo real é acessado em `/#gestao` após configurar o Supabase. Sem backend configurado, não use o site para gerir vendas. Para a loja comercial, hospede a aplicação em um serviço apropriado; os termos do GitHub Pages não permitem hospedar uma operação de e-commerce.
+
 **O que existe no sistema**
 
 - Vitrine pública, pesquisa, categorias dinâmicas, carrinho e pedido por WhatsApp.
@@ -25,7 +27,7 @@ npm install
 npm run dev
 ```
 
-Abra o endereço exibido no terminal, normalmente `http://localhost:5173`. Se **não** houver `.env`, o modo de desenvolvimento usa uma demonstração local com dados **fictícios**, que ficam salvos apenas no navegador. Na vitrine, clique no ícone de pessoa e depois em **Abrir painel de demonstração**. Teste cadastro, vendas, contas, estoque e despesas. Esse modo é intencionalmente **desativado nas versões de produção**.
+Abra o endereço exibido no terminal, normalmente `http://localhost:5173`. Se **não** houver `.env`, o modo de desenvolvimento usa uma demonstração local com dados **fictícios**, que ficam salvos apenas no navegador. Acesse `http://localhost:5173/#gestao` para abrir o painel de demonstração. Teste cadastro, vendas, contas, estoque e despesas. Esse modo é intencionalmente **desativado nas versões de produção**.
 
 ### Importante sobre a demonstração
 
