@@ -53,3 +53,12 @@
 .payment-pick input{accent-color:var(--teal);width:16px;height:16px}
 @media(max-width:720px){.product-details{grid-template-columns:1fr;gap:18px}.product-description h2{font-size:24px}.product-large-photo{max-height:450px}.store-payment-info{margin-top:-20px;margin-bottom:40px}.product-lightbox{padding:65px 32px}.product-lightbox button{width:38px;height:38px}.product-gallery-thumbs>button{width:58px;height:58px}}
 @media(max-width:390px){.payment-picks{grid-template-columns:1fr}.shop-view{font-size:11px}}
+
+/* Retorno de pagamento: resultado da URL nao e comprovante */
+.payment-return-message{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:15px;padding:18px max(20px,calc((100vw - 1180px)/2));background:#eaf6f4;border-bottom:1px solid #b9ddd8;color:#234a4d}
+.payment-return-message>svg{flex-shrink:0;color:#098690}
+.payment-return-message>div{flex:1;min-width:220px}
+.payment-return-message strong{font-size:14px}
+.payment-return-message p{margin:4px 0 0;color:#58757b;font-size:12px;line-height:1.5}
+.payment-return-message .btn{width:auto;white-space:nowrap}
+@media(max-width:700px){.payment-return-message{padding:16px 20px}.payment-return-message .btn{width:100%;justify-content:center}}
