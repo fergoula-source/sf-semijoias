@@ -10,5 +10,5 @@ const products:Product[]=[
 ]
 export const demoSeed:DB={categories:[{id:'demo-cat1',name:'Semijoias',enabled:true,sort_order:1},{id:'demo-cat2',name:'Roupas',enabled:true,sort_order:2}],products,customers:[{id:'demo-cli1',name:'Cliente exemplo',phone:'',email:'',notes:'',created_at:today}],sales:[],sale_items:[],receivables:[],cash_entries:[],stock_movements:[],online_orders:[],store_settings:[defaults]}
 export const getDemo=():DB=>{try {const x=localStorage.getItem('sf-demo-v2');if(x)return {...demoSeed,...JSON.parse(x)}}catch{}return structuredClone(demoSeed)}
-export const saveDemo=(d:DB)=>localStorage.setItem('sf-demo-v2',JSON.stringify(d))
+export const saveDemo=(d:DB)=>{try{localStorage.setItem('sf-demo-v2',JSON.stringify(d))}catch{throw Error('Espaço de teste do navegador cheio. Para cadastrar muitos produtos e fotos, conecte o banco de dados real. Não use o modo de demonstração como estoque.')}}
 export const makeId=uid
