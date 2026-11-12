@@ -30,13 +30,26 @@ Crie as duas contas por **Supabase > Authentication > Users > Add user** e atrib
 
 **Clientes externos:** manter Sign ups por e-mail e Confirm email ativados, configurar SMTP próprio para e-mails a clientes de fora da equipe. O SMTP padrão limita envios e não é adequado a produção. Compreender que a vitrine no GitHub Pages é somente teste — o serviço não deve hospedar a operação comercial.
 
+## Integração GitHub x Supabase — situação em 12/11/2026
+
+Na captura enviada, o campo **GitHub repository** ainda mostra **Choose GitHub repository**, indicando que a integração do projeto não foi concluída. Para habilitar a aplicação das migrations pelo Supabase:
+
+1. Em Supabase > Project Settings > Integrations > GitHub escolha `fergoula-source/sf-semijoias`.
+2. Defina **Working directory** = `.`, **Production branch** = `main`, marque **Deploy to production** e clique **Enable integration**.
+3. Confira os logs de produção. As migrations aplicam o schema, o cadastro de clientes, a correção do Instagram `sinara_felice` e a autorização inicial dos administradores.
+4. A migration `20261112135100_authorize_confirmed_admins.sql` **falha intencionalmente** se algum dos dois e-mails ainda não estiver confirmado no Supabase Auth. Confirme os e-mails antes de habilitar o deploy; depois reexecute-o.
+5. A criação dos usuários Auth por si só não cria o papel de administrador. As migrações devem terminar com sucesso antes de tentar o login `/#gestao`.
+6. Se o banco já foi instalado manualmente no mesmo projeto, **não execute o mesmo schema novamente** sem antes reconciliar o histórico de migrações.
+
+**Aviso de segurança:** dados bancários, CPF e tokens privados não devem ser copiados para commits, screenshots públicas ou variáveis `VITE_`. Não estão necessários para a integração do banco.
+
 ## Ativação dos administradores `fgoulart` e `sfelice`
 
 Os e-mails `fergoula@gmail.com` e `sinarafelice610@gmail.com` estão configurados no build do site. **Isso não cria as contas automaticamente**.
 
 1. Confirme que as migrações de `supabase/migrations` foram aplicadas ao projeto de produção.
 2. No Supabase > Authentication > Users, crie uma conta para cada e-mail. Configure senha inicial única e forte por processo seguro; não compartilhe senhas em GitHub nem em conversas. Confirme que ambos os e-mails estão verificados.
-3. No SQL Editor, execute o arquivo `supabase/manual_setup_admins.sql` (arquivo manual, **não é migração**). Ele só concede o papel se as DUAS contas existirem e estiverem com e-mail confirmado.
+3. Se **Deploy to production** estiver ativo, a migração `supabase/migrations/20261112135100_authorize_confirmed_admins.sql` tenta atribuir os dois papéis automaticamente (e exige e-mails confirmados). Se você já aplicou as migrações manualmente e **não usa deploy integrado**, execute o arquivo `supabase/manual_setup_admins.sql` no SQL Editor em vez de executar migrações duplicadas.
 4. No site, acesse `/#gestao`, faça login com `fgoulart` ou `sfelice` e a senha inicial correspondente. No primeiro acesso, cada um deverá trocar sua senha por uma senha forte.
 
 Se não existir nenhuma tabela, a integração GitHub pode não ter feito deploy; consulte Project Settings > Integrations > GitHub e logs de deployments. **Não execute migrations já aplicadas outra vez pelo SQL Editor.**
