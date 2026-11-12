@@ -18,6 +18,23 @@ const timeAgoDate=(offset:number)=>new Date(Date.now()+offset*86400000).toISOStr
 const money=(n:string)=>Math.max(0,Number(n.replace(',','.'))||0)
 const asset=(name:string)=>`${import.meta.env.BASE_URL}assets/${name}`
 const wpp=(phone:string,text:string)=>`https://wa.me/${phone.replace(/\D/g,'')}?text=${encodeURIComponent(text)}`
+const optimizePhoto=async(file:File):Promise<File>=>{
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Use uma foto JPG, PNG ou WebP.')
+ if(file.size>25*1024*1024)throw Error('Foto muito grande. Use arquivos com até 25 MB.')
+ if(file.size<350*1024&&file.type==='image/webp')return file
+ if(typeof createImageBitmap!=='function'){if(file.size>5*1024*1024)throw Error('Foto excede 5 MB. Reduza a imagem antes de cadastrar.');return file}
+ const bmp=await createImageBitmap(file)
+ try{
+  const size=Math.min(1,1600/Math.max(bmp.width,bmp.height))
+  const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bmp.width*size));canvas.height=Math.max(1,Math.round(bmp.height*size))
+  const ctx=canvas.getContext('2d');if(!ctx)throw Error('Não foi possível processar a foto.')
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bmp,0,0,canvas.width,canvas.height)
+  const result=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,'image/webp',0.78))
+  if(!result||result.size>5*1024*1024)throw Error('Não foi possível reduzir a foto. Tente outra imagem.')
+  return new File([result],file.name.replace(/\.[^.]+$/,'')+'.webp',{type:'image/webp'})
+ }finally{bmp.close()}
+}
+
 const instagramHandle=(input:string)=>{let value=input.trim().replace(/^@/,'');if(/^https?:\/\//i.test(value)){try{const u=new URL(value);if(!/^(www\.)?instagram\.com$/i.test(u.hostname))return '';value=u.pathname}catch{return ''}}return value.replace(/^\/+/, '').replace(/^instagram\.com\//i,'').split(/[/?#]/)[0].replace(/[^a-z0-9._]/gi,'')}
 const margin=(p:Product|ProductEdit)=>{const cost=numeric(p.cost_price),sale=numeric(p.sale_price);return sale>0?(sale-cost)/sale*100:0}
 const markup=(p:Product|ProductEdit)=>{const cost=numeric(p.cost_price),sale=numeric(p.sale_price);return cost>0?(sale-cost)/cost*100:0}
@@ -198,7 +215,7 @@ const startCheckout=async(e:FormEvent)=>{e.preventDefault();if(!supabase||!check
 const exportCSV=(filename:string,rows:Record<string,unknown>[])=>{if(!rows.length)return success('Não há dados para exportar.');const keys=Object.keys(rows[0]);const esc=(v:unknown)=>{let value=String(v??'');if(/^[\s]*[=+\-@]/.test(value))value="'"+value;return '"'+value.replaceAll('"','""')+'"'};const text='\ufeff'+[keys.join(';'),...rows.map(r=>keys.map(k=>esc(r[k])).join(';'))].join('\r\n');const blob=new Blob([text],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url)}
 
 const saveProduct=async(e:FormEvent)=>{e.preventDefault();if(!productEdit)return;try{const item={name:productEdit.name.trim(),sku:productEdit.sku.trim()||null,description:productEdit.description.trim()||null,category_id:productEdit.category_id||null,cost_price:money(productEdit.cost_price),sale_price:money(productEdit.sale_price),stock:Math.floor(numeric(productEdit.stock)),min_stock:Math.floor(numeric(productEdit.min_stock)),supplier:productEdit.supplier.trim()||null,active:productEdit.active,photo_urls:productEdit.photo_urls};if(!item.name||item.sale_price<=0||item.stock<0||item.min_stock<0)throw Error('Preencha nome, preço de venda e estoque válidos.');await write('products',productEdit.id?'update':'insert',item,productEdit.id);setProductEdit(null);success('Produto salvo com sucesso!')}catch(e){showError(e)}}
-const uploadPhotos=async(files:FileList|null)=>{if(!files||!productEdit)return;setUploading(true);try{let urls=[...productEdit.photo_urls];for(const file of Array.from(files).slice(0,Math.max(0,5-urls.length))){if(file.size>5*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Use JPG, PNG ou WebP de até 5 MB por foto.');if(isDemo){const data=await new Promise<string>((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=reject;r.readAsDataURL(file)});urls.push(data)}else{if(!supabase)throw Error('Banco indisponível');const path=`${uid()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g,'_')}`;const {error:e}=await supabase.storage.from('product-images').upload(path,file,{upsert:false,contentType:file.type});if(e)throw e;const {data}=supabase.storage.from('product-images').getPublicUrl(path);urls.push(data.publicUrl)}}setProductEdit(p=>p?{...p,photo_urls:urls}:null)}catch(e){showError(e)}finally{setUploading(false)}}
+const uploadPhotos=async(files:FileList|null)=>{if(!files||!productEdit)return;setUploading(true);try{let urls=[...productEdit.photo_urls];for(const file of Array.from(files).slice(0,Math.max(0,5-urls.length))){const optimized=await optimizePhoto(file);if(isDemo){const data=await new Promise<string>((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=reject;r.readAsDataURL(optimized)});urls.push(data)}else{if(!supabase)throw Error('Banco indisponível');const path=`${uid()}-${optimized.name.replace(/[^a-zA-Z0-9.\-_]/g,'_')}`;const {error:e}=await supabase.storage.from('product-images').upload(path,optimized,{upsert:false,contentType:optimized.type});if(e)throw e;const {data}=supabase.storage.from('product-images').getPublicUrl(path);urls.push(data.publicUrl)}}setProductEdit(p=>p?{...p,photo_urls:urls}:null)}catch(e){showError(e)}finally{setUploading(false)}}
 const saveCategory=async()=>{if(categoryName.trim().length<2)return;try{await write('categories','insert',{name:categoryName.trim(),enabled:true,sort_order:db.categories.length+1});setCategoryName('');success('Categoria criada.')}catch(e){showError(e)}}
 const saveCustomer=async(e:FormEvent)=>{e.preventDefault();if(!customerEdit?.name?.trim())return;try{await write('customers',customerEdit.id?'update':'insert',{name:customerEdit.name.trim(),phone:customerEdit.phone||null,email:customerEdit.email||null,notes:customerEdit.notes||null},customerEdit.id);setCustomerEdit(null);success('Cliente salvo.')}catch(e){showError(e)}}
 const addSaleItem=(id:string)=>{setSaleCart(items=>{const line=items.find(i=>i.id===id);const p=db.products.find(p=>p.id===id);if(!p||p.stock<1)return items;if(line&&line.qty>=p.stock)return items;return line?items.map(i=>i.id===id?{...i,qty:i.qty+1}:i):[...items,{id,qty:1}]})}
