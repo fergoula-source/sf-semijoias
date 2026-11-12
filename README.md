@@ -30,6 +30,27 @@ Crie as duas contas por **Supabase > Authentication > Users > Add user** e atrib
 
 **Clientes externos:** manter Sign ups por e-mail e Confirm email ativados, configurar SMTP próprio para e-mails a clientes de fora da equipe. O SMTP padrão limita envios e não é adequado a produção. Compreender que a vitrine no GitHub Pages é somente teste — o serviço não deve hospedar a operação comercial.
 
+## Ativação dos administradores `fgoulart` e `sfelice`
+
+Os e-mails `fergoula@gmail.com` e `sinarafelice610@gmail.com` estão configurados no build do site. **Isso não cria as contas automaticamente**.
+
+1. Confirme que as migrações de `supabase/migrations` foram aplicadas ao projeto de produção.
+2. No Supabase > Authentication > Users, crie uma conta para cada e-mail. Configure senha inicial única e forte por processo seguro; não compartilhe senhas em GitHub nem em conversas. Confirme que ambos os e-mails estão verificados.
+3. No SQL Editor, execute o arquivo `supabase/manual_setup_admins.sql` (arquivo manual, **não é migração**). Ele só concede o papel se as DUAS contas existirem e estiverem com e-mail confirmado.
+4. No site, acesse `/#gestao`, faça login com `fgoulart` ou `sfelice` e a senha inicial correspondente. No primeiro acesso, cada um deverá trocar sua senha por uma senha forte.
+
+Se não existir nenhuma tabela, a integração GitHub pode não ter feito deploy; consulte Project Settings > Integrations > GitHub e logs de deployments. **Não execute migrations já aplicadas outra vez pelo SQL Editor.**
+
+## Mercado Pago: necessário para habilitar venda online
+
+1. A Sinara precisa de sua conta Mercado Pago regularizada e apta a receber pagamentos.
+2. Em Mercado Pago Developers, crie uma aplicação Checkout Pro e, primeiro, faça os testes de pagamento no ambiente de teste.
+3. Configure o `MERCADOPAGO_ACCESS_TOKEN` privado e `MERCADOPAGO_WEBHOOK_SECRET` em Supabase > Edge Functions > Secrets. Nunca em `.env.production`, variáveis `VITE_` ou arquivos do GitHub.
+4. Configure no Supabase `PUBLIC_STORE_URL` (URL HTTPS da hospedagem comercial definitiva) e `ALLOWED_ORIGINS` (origem HTTPS correspondente). No painel Mercado Pago, configure o webhook para `https://lydxjkgnlvqmezjhzxhl.supabase.co/functions/v1/mercadopago-webhook`.
+5. Verifique que `create-checkout` e `mercadopago-webhook` foram de fato implantadas. Faça testes de aprovação, recusa, atraso, pagamento duplicado, cancelamento, estorno e falta de estoque antes de habilitar `VITE_CHECKOUT_ENABLED=true` e `store_settings.checkout_enabled=true`.
+
+Enquanto isso, a loja pode usar o atendimento por WhatsApp sem processar pagamento online.
+
 ## 1. Testar no seu computador (sem banco real)
 
 Instale [Node.js 22](https://nodejs.org/) e execute na pasta do projeto:
