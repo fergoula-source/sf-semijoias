@@ -1,13 +1,16 @@
 // Checkout Pro moderno (Orders API). Não armazenar tokens neste arquivo.
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2'
 
-const url=Deno.env.get('SUPABASE_URL')!
-const secretKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const mpToken=Deno.env.get('MERCADOPAGO_ACCESS_TOKEN')!
-const storeUrl=Deno.env.get('PUBLIC_STORE_URL')!
-const allowedOrigins=(Deno.env.get('ALLOWED_ORIGINS')||storeUrl).split(',').map(s=>s.trim()).filter(Boolean)
-const db=createClient(url,secretKey,{auth:{persistSession:false}})
-const respond=(body:Record<string,unknown>,status=200,origin='')=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':allowedOrigins.includes(origin)?origin:allowedOrigins[0]||'',Vary:'Origin','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS'}})
+const url=Deno.env.get('SUPABASE_URL') || ''
+const secretKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+const mpToken=Deno.env.get('MERCADOPAGO_ACCESS_TOKEN') || ''
+const storeUrl=Deno.env.get('PUBLIC_STORE_URL') || ''
+const configuredOrigins=(Deno.env.get('ALLOWED_ORIGINS') || '').split(',').map(s=>s.trim()).filter(Boolean)
+const getOrigin=(value:string)=>{try{const u=new URL(value);return u.protocol==='https:'||u.hostname==='localhost'?u.origin:''}catch{return ''}}
+const storeOrigin=getOrigin(storeUrl)
+const allowedOrigins=[...new Set(configuredOrigins.map(getOrigin).concat(storeOrigin).filter(Boolean))]
+const db=url&&secretKey?createClient(url,secretKey,{auth:{persistSession:false}}):null
+const respond=(body:Record<string,unknown>,status=200,origin='')=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json',...(allowedOrigins.includes(origin)?{'Access-Control-Allow-Origin':origin}:{}),'Vary':'Origin','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS'}})
 const round=(n:number)=>Math.round(n*100)/100
 const integer=(n:unknown)=>Number.isInteger(n)&&Number(n)>0&&Number(n)<=50
 const okUuid=(s:unknown)=>typeof s==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)
@@ -17,7 +20,7 @@ Deno.serve(async(req)=>{
  if(req.method==='OPTIONS')return respond({},200,origin)
  if(req.method!=='POST')return respond({error:'Método não permitido'},405,origin)
  try{
-  if(!mpToken||!storeUrl)throw Error('Checkout não configurado')
+  if(!mpToken||!storeUrl||!storeOrigin||!db)throw Error('Checkout ainda não configurado. Fale com a loja pelo WhatsApp.')
   // Somente compradores autenticados com e-mail verificado podem pagar online.
   const authorization=req.headers.get('Authorization')||''
   if(!authorization.startsWith('Bearer '))return respond({error:'Entre na sua conta para finalizar a compra'},401,origin)
@@ -25,7 +28,7 @@ Deno.serve(async(req)=>{
   const {data:identity,error:authError}=await db.auth.getUser(jwt)
   const user=identity?.user
   if(authError||!user)return respond({error:'Sessão inválida. Entre novamente.'},401,origin)
-  if(!user.email_confirmed_at&&!user.phone_confirmed_at)return respond({error:'Confirme seu e-mail antes de comprar'},403,origin)
+  if(!user.email_confirmed_at)return respond({error:'Confirme seu e-mail antes de comprar'},403,origin)
   const {items,buyer}=await req.json()
   if(!Array.isArray(items)||!items.length||items.length>15||!items.every((i:{id:unknown;qty:unknown})=>okUuid(i.id)&&integer(i.qty)))throw Error('Carrinho inválido')
   const ids=new Set(items.map((i:{id:string})=>i.id))
@@ -64,12 +67,16 @@ Deno.serve(async(req)=>{
       payer:{email},description:`SF Semijoias | pedido ${order.id.slice(0,8)}`,items:mpItems,
       config:{online:{success_url:`${storeUrl}?resultado=sucesso`,failure_url:`${storeUrl}?resultado=falha`,pending_url:`${storeUrl}?resultado=pendente`,auto_return:'approved'}}})
   })
-  const result=await mp.json()
-  if(!mp.ok||!result?.checkout_url||!/^https:\/\/(www\.)?mercadopago\.(com\.br|com)(\/|$)/.test(result.checkout_url)){
+  const result=await mp.json().catch(()=>null)
+  if(!mp.ok||!result?.id||!result?.checkout_url||!/^https:\/\/(www\.)?mercadopago\.(com\.br|com)(\/|$)/.test(result.checkout_url)){
     await db.from('online_orders').update({status:'cancelado'}).eq('id',order.id)
     throw Error('Não foi possível gerar o pagamento no Mercado Pago')
   }
-  await db.from('online_orders').update({preference_id:String(result.id)}).eq('id',order.id)
+  // Não permitir que o comprador pague se o ID da order externa não foi vinculado.
+  const {data:linked,error:linkError}=await db.from('online_orders')
+    .update({preference_id:String(result.id)})
+    .eq('id',order.id).eq('status','aguardando_pagamento').select('id').single()
+  if(linkError||!linked)throw Error('Não foi possível vincular o pagamento ao pedido. Tente novamente.')
   return respond({url:result.checkout_url,order_id:order.id},200,origin)
  }catch(e){return respond({error:e instanceof Error?e.message:'Erro no checkout'},400,origin)}
 })
