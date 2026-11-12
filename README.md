@@ -4,6 +4,13 @@ Site de vendas e sistema administrativo da SF Semijoias, pensado para funcionar 
 
 **ATENÇÃO (novembro/2026):** a publicação pública sem Supabase é somente uma vitrine de preparação, **sem painel de demonstração e sem cadastros reais**. O modo de teste com dados locais ficou restrito a `npm run dev` em `localhost`, e o login administrativo real é acessado em `/#gestao` após configurar o Supabase. Sem backend configurado, não use o site para gerir vendas. Para a loja comercial, hospede a aplicação em um serviço apropriado; os termos do GitHub Pages não permitem hospedar uma operação de e-commerce.
 
+## Vitrine atualizada (novembro/2026)
+
+- As fotos e o nome dos produtos agora abrem uma janela de detalhes com galeria, miniaturas, ampliação, preço, descrição, disponibilidade e botão Adicionar à sacola. O custo e fornecedor **não aparecem** na área pública.
+- Quando o checkout online ainda está desativado, o pedido mostra **preferência de pagamento** (a combinar, Pix, crédito, débito, dinheiro) e, para crédito, parcelas desejadas. Essas informações são transmitidas **somente ao WhatsApp**; **não existe pagamento nem reserva de estoque automática** neste fluxo.
+- Um pedido por WhatsApp **não é venda concluída**. A Sinara deve confirmar preço final, estoque, frete, taxas e pagamento. A venda e o recebimento devem ser registrados no painel administrativo.
+- Para cobrar diretamente no site, ainda é necessário configurar as credenciais privadas de produção do Mercado Pago e webhook no Supabase, confirmar conta apta a receber, testar pagamento aprovado/recusado/estorno, e só então habilitar `VITE_CHECKOUT_ENABLED` e `store_settings.checkout_enabled` em uma hospedagem comercial apropriada.
+
 **O que existe no sistema**
 
 - Vitrine pública, pesquisa, categorias dinâmicas, carrinho e pedido por WhatsApp.
