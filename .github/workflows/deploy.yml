@@ -29,8 +29,8 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_ngf-eCfwJfNupy_ckMA7LQ_u-krVAKD' }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
           VITE_CHECKOUT_ENABLED: ${{ vars.VITE_CHECKOUT_ENABLED }}
-          VITE_ADMIN_FGOULART_EMAIL: ${{ vars.VITE_ADMIN_FGOULART_EMAIL }}
-          VITE_ADMIN_SFELICE_EMAIL: ${{ vars.VITE_ADMIN_SFELICE_EMAIL }}
+          VITE_ADMIN_FGOULART_EMAIL: ${{ vars.VITE_ADMIN_FGOULART_EMAIL || 'fergoula@gmail.com' }}
+          VITE_ADMIN_SFELICE_EMAIL: ${{ vars.VITE_ADMIN_SFELICE_EMAIL || 'sinarafelice610@gmail.com' }}
           GITHUB_PAGES_BASE: /${{ github.event.repository.name }}/
       - uses: actions/configure-pages@v5
         with:
