@@ -1,7 +1,8 @@
 -- Provisionamento unico dos dois admins indicados pelo responsavel da loja.
 -- Somente emails VERIFICADOS pelo Supabase Auth podem ser autorizados.
 -- Executa automaticamente apos migracoes de tabelas, quando o GitHub estiver conectado.
--- Se a verificacao ainda nao ocorreu, falha de forma explicita em vez de liberar o acesso.
+-- Se ambos os usuarios ainda nao confirmaram email, nao interromper a criacao do banco.
+-- O papel so sera atribuido quando ambos estiverem verificados; caso contrario, usar o script manual_setup_admins.sql depois.
 do $$
 declare
   v_fernando uuid;
@@ -13,7 +14,8 @@ begin
    where lower(u.email)='sinarafelice610@gmail.com' and u.email_confirmed_at is not null;
 
   if v_fernando is null or v_sinara is null or v_fernando=v_sinara then
-    raise exception 'SF Semijoias: confirme ambos os emails em Authentication > Users ANTES de fazer o deploy. Nao use senha padrao.';
+    raise notice 'SF Semijoias: um ou dois emails ainda nao foram confirmados. Admin nao autorizado nesta etapa.';
+    return;
   end if;
 
   insert into public.admin_users(user_id,display_name,username,must_change_password)
