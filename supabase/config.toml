@@ -1,3 +1,8 @@
+# Projeto Supabase de producao vinculado ao repositorio sf-semijoias.
+# Requer GitHub Integration > Deploy to production ativo no painel do Supabase.
+[remotes.production]
+project_id = "lydxjkgnlvqmezjhzxhl"
+
 [functions.create-checkout]
 verify_jwt = false
 [functions.mercadopago-webhook]
