@@ -37,8 +37,8 @@ Na captura enviada, o campo **GitHub repository** ainda mostra **Choose GitHub r
 1. Em Supabase > Project Settings > Integrations > GitHub escolha `fergoula-source/sf-semijoias`.
 2. Defina **Working directory** = `.`, **Production branch** = `main`, marque **Deploy to production** e clique **Enable integration**.
 3. Confira os logs de produção. As migrations aplicam o schema, o cadastro de clientes, a correção do Instagram `sinara_felice` e a autorização inicial dos administradores.
-4. A migration `20261112135100_authorize_confirmed_admins.sql` **falha intencionalmente** se algum dos dois e-mails ainda não estiver confirmado no Supabase Auth. Confirme os e-mails antes de habilitar o deploy; depois reexecute-o.
-5. A criação dos usuários Auth por si só não cria o papel de administrador. As migrações devem terminar com sucesso antes de tentar o login `/#gestao`.
+4. A migration `20261112135100_authorize_confirmed_admins.sql` **não bloqueia a criação do banco** caso os dois e-mails não estejam confirmados; ela apenas não libera os administradores nesse caso. Depois de confirmar as contas, rode `supabase/manual_setup_admins.sql` uma única vez no SQL Editor, caso os perfis administrativos ainda não existam.
+5. A criação dos usuários Auth por si só não cria o papel de administrador. As migrações devem terminar com sucesso antes de tentar o login `/#gestao`. Se a loja disser `Could not find the table 'public.categories' in the schema cache`, o banco ainda está sem a migração inicial ou o cache da API não foi recarregado. Veja `Manage Branches > main > View logs > Migrate`: não execute as migrations existentes no SQL Editor para não perder a sincronização do histórico.
 6. Se o banco já foi instalado manualmente no mesmo projeto, **não execute o mesmo schema novamente** sem antes reconciliar o histórico de migrações.
 
 **Aviso de segurança:** dados bancários, CPF e tokens privados não devem ser copiados para commits, screenshots públicas ou variáveis `VITE_`. Não estão necessários para a integração do banco.
