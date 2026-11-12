@@ -37,7 +37,7 @@ Nunca use dados de clientes reais na demonstração: ela não tem autenticação
 
 1. Acesse [supabase.com](https://supabase.com), crie conta, depois **New project**.
 2. Escolha nome `sf-semijoias`, uma senha forte do banco e a região mais próxima disponível. Guarde a senha em local seguro.
-3. Vá até **SQL Editor > New query**, cole todo o arquivo `supabase/migrations/001_schema.sql` e execute. Isso cria tabelas, views, regras de acesso, armazenamento de fotos e funções de venda.
+3. Vá até **SQL Editor > New query**, cole todo o arquivo `supabase/migrations/20261106080000_initial_schema.sql` e execute. Isso cria tabelas, views, regras de acesso, armazenamento de fotos e funções de venda.
 4. Vá até **Authentication > Users > Add user** e crie uma conta para a Sinara e outra para você. Não coloque senhas dentro do repositório.
 5. Em **Authentication**, desative cadastro público (*Sign ups*) e configure o e-mail de confirmação/recuperação conforme necessário.
 6. Copie o **UUID** de cada conta, volte ao SQL Editor e rode, trocando os exemplos:
