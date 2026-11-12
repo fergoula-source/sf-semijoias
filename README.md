@@ -18,6 +18,18 @@ Site de vendas e sistema administrativo da SF Semijoias, pensado para funcionar 
 - Pedidos online e estrutura para pagamento pelo **Mercado Pago Checkout Pro (Orders API)** via funções no servidor.
 - Página "Nossa história" com fotos fornecidas, texto editável e contatos.
 
+## Situação atual e integração de produção (12/11/2026)
+
+Projeto Supabase vinculado por referência: `lydxjkgnlvqmezjhzxhl` (URL pública `https://lydxjkgnlvqmezjhzxhl.supabase.co`).
+
+Apenas conectar Supabase e GitHub **não instala as tabelas nem ativa o frontend automaticamente**. Confira no Supabase em **Project Settings > Integrations > GitHub**: repositório `fergoula-source/sf-semijoias`, diretório de trabalho `.`, branch `main`, opção **Deploy to production** habilitada. Veja os logs de migração para confirmar. O código agora usa migrações com timestamps e configura `[remotes.production]` no `config.toml`.
+
+No GitHub, em **Settings > Secrets and variables > Actions > Variables**, adicione a chave de navegador `VITE_SUPABASE_PUBLISHABLE_KEY` (em Supabase **Settings > API Keys > Publishable**). O URL já está configurado no workflow. A chave publishable é pública, mas **NUNCA coloque `sb_secret_` ou `service_role` em variáveis VITE**, nem no navegador. Configure também `VITE_ADMIN_FGOULART_EMAIL` e `VITE_ADMIN_SFELICE_EMAIL` para permitir login pelos nomes de usuário.
+
+Crie as duas contas por **Supabase > Authentication > Users > Add user** e atribua cada UUID à tabela `public.admin_users` após as migrações. As senhas são individuais; o primeiro acesso exige troca, sem senhas iniciais públicas. Mantenha checkout desativado até configurar Mercado Pago e fazer testes de pagamento, reembolso, frete e estoque.
+
+**Clientes externos:** manter Sign ups por e-mail e Confirm email ativados, configurar SMTP próprio para e-mails a clientes de fora da equipe. O SMTP padrão limita envios e não é adequado a produção. Compreender que a vitrine no GitHub Pages é somente teste — o serviço não deve hospedar a operação comercial.
+
 ## 1. Testar no seu computador (sem banco real)
 
 Instale [Node.js 22](https://nodejs.org/) e execute na pasta do projeto:
@@ -37,15 +49,15 @@ Nunca use dados de clientes reais na demonstração: ela não tem autenticação
 
 1. Acesse [supabase.com](https://supabase.com), crie conta, depois **New project**.
 2. Escolha nome `sf-semijoias`, uma senha forte do banco e a região mais próxima disponível. Guarde a senha em local seguro.
-3. Vá até **SQL Editor > New query**, cole todo o arquivo `supabase/migrations/20261106080000_initial_schema.sql` e execute. Isso cria tabelas, views, regras de acesso, armazenamento de fotos e funções de venda.
+3. **Se a integração GitHub > Deploy to production estiver ligada**, as migrações `supabase/migrations/20261106080000_initial_schema.sql` e `supabase/migrations/20261106080100_customer_accounts.sql` são aplicadas automaticamente. **Não execute essas migrações novamente no SQL Editor** (isso pode criar conflito no histórico). Se optar por instalação totalmente manual, execute-as na ordem correta somente em um projeto NOVO, sem histórico de migrações GitHub.
 4. Vá até **Authentication > Users > Add user** e crie uma conta para a Sinara e outra para você. Não coloque senhas dentro do repositório.
-5. Em **Authentication**, desative cadastro público (*Sign ups*) e configure o e-mail de confirmação/recuperação conforme necessário.
+5. Em **Authentication**, **mantenha cadastro por e-mail habilitado para compradores** e ative **Confirm email**. O acesso administrativo é protegido pela tabela `admin_users` e pelas políticas RLS; desabilitar os cadastros de e-mail bloquearia também os compradores. Para clientes reais, configure SMTP próprio, porque o SMTP padrão do Supabase não atende e-mails externos em produção.
 6. Copie o **UUID** de cada conta, volte ao SQL Editor e rode, trocando os exemplos:
 
 ```sql
-insert into public.admin_users(user_id,display_name) values
-('COLE-O-UUID-DA-SINARA'::uuid,'Sinara'),
-('COLE-O-SEU-UUID'::uuid,'Administrador');
+insert into public.admin_users(user_id,display_name,username,must_change_password) values
+('COLE-O-SEU-UUID'::uuid,'Fernando','fgoulart',true),
+('COLE-O-UUID-DA-SINARA'::uuid,'Sinara','sfelice',true);
 ```
 
 7. Em **Project Settings > API**, copie a `Project URL` e a **publishable/anon key**. A `service_role` ou **secret key** JAMAIS pode ser colocada no site, no GitHub ou no `.env` do Vite.
